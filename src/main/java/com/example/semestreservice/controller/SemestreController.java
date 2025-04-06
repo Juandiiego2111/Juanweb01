@@ -6,6 +6,7 @@ import com.example.semestreservice.service.SemestreService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,32 +18,62 @@ public class SemestreController {
     private final SemestreService semestreService;
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public SemestreResponse crearSemestre(@Valid @RequestBody SemestreRequest request) {
-        return semestreService.crearSemestre(request);
+    public ResponseEntity<String> crearSemestre(@Valid @RequestBody SemestreRequest request) {
+        try {
+            semestreService.crearSemestre(request);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body("✅ El semestre fue creado exitosamente.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("❌ No se pudo crear el semestre. Error: " + e.getMessage());
+        }
     }
 
     @GetMapping
-    public List<SemestreResponse> listarSemestres() {
-        return semestreService.listarSemestres();
+    public ResponseEntity<?> listarSemestres() {
+        try {
+            List<SemestreResponse> lista = semestreService.listarSemestres();
+            return ResponseEntity.ok().body(lista.isEmpty()
+                    ? "⚠️ No hay semestres registrados."
+                    : lista);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("❌ No se pudieron listar los semestres. Error: " + e.getMessage());
+        }
     }
 
     @GetMapping("/{id}")
-    public SemestreResponse obtenerSemestre(@PathVariable Long id) {
-        return semestreService.obtenerSemestre(id);
+    public ResponseEntity<?> obtenerSemestre(@PathVariable Long id) {
+        try {
+            SemestreResponse semestre = semestreService.obtenerSemestre(id);
+            return ResponseEntity.ok().body(semestre);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("❌ No se pudo obtener el semestre con ID " + id + ". Error: " + e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
-    public SemestreResponse actualizarSemestre(
+    public ResponseEntity<?> actualizarSemestre(
             @PathVariable Long id,
             @Valid @RequestBody SemestreRequest request) {
-        return semestreService.actualizarSemestre(id, request);
+        try {
+            SemestreResponse actualizado = semestreService.actualizarSemestre(id, request);
+            return ResponseEntity.ok("✅ El semestre fue actualizado exitosamente.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("❌ No se pudo actualizar el semestre con ID " + id + ". Error: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void eliminarSemestre(@PathVariable Long id) {
-        semestreService.eliminarSemestre(id);
+    public ResponseEntity<String> eliminarSemestre(@PathVariable Long id) {
+        try {
+            semestreService.eliminarSemestre(id);
+            return ResponseEntity.ok("✅ El semestre fue eliminado exitosamente.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("❌ No se pudo eliminar el semestre con ID " + id + ". Error: " + e.getMessage());
+        }
     }
-
 }

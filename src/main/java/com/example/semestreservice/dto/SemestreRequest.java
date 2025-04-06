@@ -5,7 +5,6 @@ import java.time.LocalDate;
 
 public record SemestreRequest(
         @NotBlank(message = "El nombre no puede estar vacío")
-        @Pattern(regexp = "^\\d{4}-[1-2]$", message = "Formato de semestre inválido (ej: 2024-1)")
         String nombre,
 
         @NotNull(message = "La fecha de inicio es obligatoria")

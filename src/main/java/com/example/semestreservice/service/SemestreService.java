@@ -20,6 +20,11 @@ public class SemestreService {
     public SemestreResponse crearSemestre(SemestreRequest request) {
         validarFechas(request);
 
+        // Validar si ya existe un semestre con ese nombre
+        if (semestreRepository.existsByNombre(request.nombre())) {
+            throw new IllegalArgumentException("Ya existe un semestre con el nombre '" + request.nombre() + "'");
+        }
+
         Semestre semestre = new Semestre();
         semestre.setNombre(request.nombre());
         semestre.setFechaInicio(request.fechaInicio());
