@@ -2,23 +2,23 @@ package com.example.semestreservice.controller;
 
 import com.example.semestreservice.dto.SemestreRequest;
 import com.example.semestreservice.dto.SemestreResponse;
+import com.example.semestreservice.exception.ResourceNotFoundException;
 import com.example.semestreservice.service.SemestreService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.example.semestreservice.exception.ResourceNotFoundException;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/semestre-service")
+@RequestMapping("/api/v1/semestre-service/semestres")
 @RequiredArgsConstructor
 public class SemestreController {
 
@@ -100,8 +100,14 @@ public class SemestreController {
 
         Map<String, Object> response = new HashMap<>();
         response.put("mensaje", "✅ Página de semestres obtenida correctamente");
-        response.put("pagina", pageResult);
+        response.put("semestres", pageResult.getContent()); // solo los datos
+        response.put("paginaActual", pageResult.getNumber());
+        response.put("totalPaginas", pageResult.getTotalPages());
+        response.put("totalElementos", pageResult.getTotalElements());
+        response.put("tamañoPagina", pageResult.getSize());
 
         return ResponseEntity.ok(response);
     }
+
+
 }
