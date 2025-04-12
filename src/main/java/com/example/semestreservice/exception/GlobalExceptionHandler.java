@@ -17,8 +17,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(
             ResourceNotFoundException ex, WebRequest request) {
+
         ErrorResponse response = new ErrorResponse(
-                "NOT_FOUND",
+                "❌ Recurso no encontrado",
                 ex.getMessage()
         );
         response.setPath(request.getDescription(false).replace("uri=", ""));
@@ -28,15 +29,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationExceptions(
             MethodArgumentNotValidException ex, WebRequest request) {
-        Map<String, String> errors = new HashMap<>();
+
+        Map<String, String> errores = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage()));
+                errores.put(error.getField(), error.getDefaultMessage()));
 
         ErrorResponse response = new ErrorResponse(
-                "VALIDATION_FAILED",
-                "Error de validación en los campos"
+                "⚠️ Error de validación",
+                "Existen errores en los campos del formulario."
         );
-        response.setDetails(errors);
+        response.setDetalles(errores);
         response.setPath(request.getDescription(false).replace("uri=", ""));
 
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
@@ -45,9 +47,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolation(
             ConstraintViolationException ex, WebRequest request) {
+
         ErrorResponse response = new ErrorResponse(
-                "CONSTRAINT_VIOLATION",
-                "Violación de restricciones: " + ex.getMessage()
+                "⚠️ Violación de restricciones",
+                ex.getMessage()
         );
         response.setPath(request.getDescription(false).replace("uri=", ""));
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
@@ -56,9 +59,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(
             Exception ex, WebRequest request) {
+
         ErrorResponse response = new ErrorResponse(
-                "INTERNAL_SERVER_ERROR",
-                "Ocurrió un error inesperado: " + ex.getMessage()
+                "❌ Error interno del servidor",
+                "Ocurrió un error inesperado. Detalles: " + ex.getMessage()
         );
         response.setPath(request.getDescription(false).replace("uri=", ""));
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);

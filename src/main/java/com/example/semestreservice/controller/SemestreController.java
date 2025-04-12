@@ -5,75 +5,103 @@ import com.example.semestreservice.dto.SemestreResponse;
 import com.example.semestreservice.service.SemestreService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.semestreservice.exception.ResourceNotFoundException;
 
-import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
-@RequestMapping("/api/semestres")
+@RequestMapping("/api/v1/semestre-service")
 @RequiredArgsConstructor
 public class SemestreController {
+
     private final SemestreService semestreService;
 
     @PostMapping
-    public ResponseEntity<String> crearSemestre(@Valid @RequestBody SemestreRequest request) {
-        try {
-            semestreService.crearSemestre(request);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body("✅ El semestre fue creado exitosamente.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("❌ No se pudo crear el semestre. Error: " + e.getMessage());
-        }
+    public ResponseEntity<Map<String, Object>> crear(@Valid @RequestBody SemestreRequest request) {
+        SemestreResponse creado = semestreService.crearSemestre(request);
+        Map<String, Object> response = new HashMap<>();
+        response.put("mensaje", "✅ Semestre creado correctamente");
+        response.put("semestre", creado);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @GetMapping
-    public ResponseEntity<?> listarSemestres() {
-        try {
-            List<SemestreResponse> lista = semestreService.listarSemestres();
-            return ResponseEntity.ok().body(lista.isEmpty()
-                    ? "⚠️ No hay semestres registrados."
-                    : lista);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("❌ No se pudieron listar los semestres. Error: " + e.getMessage());
-        }
+    public ResponseEntity<Map<String, Object>> listar() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("mensaje", "✅ Lista de semestres obtenida exitosamente");
+        response.put("semestres", semestreService.listarSemestres());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> obtenerSemestre(@PathVariable Long id) {
-        try {
-            SemestreResponse semestre = semestreService.obtenerSemestre(id);
-            return ResponseEntity.ok().body(semestre);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("❌ No se pudo obtener el semestre con ID " + id + ". Error: " + e.getMessage());
-        }
+    public ResponseEntity<Map<String, Object>> obtener(@PathVariable Long id) {
+        SemestreResponse semestre = semestreService.obtenerSemestre(id);
+        Map<String, Object> response = new HashMap<>();
+        response.put("mensaje", "✅ Semestre encontrado");
+        response.put("semestre", semestre);
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> actualizarSemestre(
-            @PathVariable Long id,
-            @Valid @RequestBody SemestreRequest request) {
-        try {
-            SemestreResponse actualizado = semestreService.actualizarSemestre(id, request);
-            return ResponseEntity.ok("✅ El semestre fue actualizado exitosamente.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("❌ No se pudo actualizar el semestre con ID " + id + ". Error: " + e.getMessage());
-        }
+    public ResponseEntity<Map<String, Object>> actualizar(@PathVariable Long id, @Valid @RequestBody SemestreRequest request) {
+        SemestreResponse actualizado = semestreService.actualizarSemestre(id, request);
+        Map<String, Object> response = new HashMap<>();
+        response.put("mensaje", "✅ Semestre actualizado correctamente");
+        response.put("semestre", actualizado);
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> eliminarSemestre(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> eliminarSemestre(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
         try {
             semestreService.eliminarSemestre(id);
-            return ResponseEntity.ok("✅ El semestre fue eliminado exitosamente.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("❌ No se pudo eliminar el semestre con ID " + id + ". Error: " + e.getMessage());
+            response.put("mensaje", "✅ Semestre eliminado correctamente");
+            return ResponseEntity.ok(response);
+        } catch (ResourceNotFoundException ex) {
+            response.put("mensaje", "No se encontró el semestre con ID: " + id);
+            response.put("error", ex.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (Exception ex) {
+            response.put("mensaje", "❌ Ocurrió un error al eliminar el semestre");
+            response.put("error", ex.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
+    }
+
+    @GetMapping("/page/{page}")
+    public ResponseEntity<Map<String, Object>> listarPaginado(
+            @PathVariable int page,
+            @RequestParam(defaultValue = "4") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+
+        if (size < 1) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "mensaje", "Tamaño de página no válido",
+                    "error", "El parámetro 'size' debe ser mayor a 0"
+            ));
+        }
+
+        Sort sort = sortDir.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<SemestreResponse> pageResult = semestreService.listarSemestresPaginados(pageable);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("mensaje", "✅ Página de semestres obtenida correctamente");
+        response.put("pagina", pageResult);
+
+        return ResponseEntity.ok(response);
     }
 }

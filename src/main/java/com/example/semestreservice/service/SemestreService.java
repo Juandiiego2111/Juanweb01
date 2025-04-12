@@ -6,6 +6,8 @@ import com.example.semestreservice.exception.ResourceNotFoundException;
 import com.example.semestreservice.model.Semestre;
 import com.example.semestreservice.repository.SemestreRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +22,6 @@ public class SemestreService {
     public SemestreResponse crearSemestre(SemestreRequest request) {
         validarFechas(request);
 
-        // Validar si ya existe un semestre con ese nombre
         if (semestreRepository.existsByNombre(request.nombre())) {
             throw new IllegalArgumentException("Ya existe un semestre con el nombre '" + request.nombre() + "'");
         }
@@ -40,6 +41,12 @@ public class SemestreService {
         return semestreRepository.findAll().stream()
                 .map(this::mapToResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<SemestreResponse> listarSemestresPaginados(Pageable pageable) {
+        return semestreRepository.findAll(pageable)
+                .map(this::mapToResponse);
     }
 
     @Transactional(readOnly = true)
